@@ -1,5 +1,5 @@
 # Salesforce Test Data Factory + CI/CD Pipeline
-
+![CI](https://github.com/TarunMadaraboina-16/Salesforce-test-data-factory/actions/workflows/ci.yml/badge.svg)
 A production-grade **Test Data Factory** pattern for Apex, wired to a **GitHub Actions**
 pipeline that creates a scratch org, deploys the source, and runs every Apex test
 with coverage on each push.
