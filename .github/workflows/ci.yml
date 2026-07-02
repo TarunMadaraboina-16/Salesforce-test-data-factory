@@ -1,0 +1,51 @@
+name: Salesforce CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  apex-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Install Salesforce CLI
+        run: |
+          npm install --global @salesforce/cli@latest
+          sf --version
+
+      - name: Authenticate Dev Hub
+        run: |
+          echo "${{ secrets.SFDX_AUTH_URL }}" > ./auth_url.txt
+          sf org login sfdx-url --sfdx-url-file ./auth_url.txt --alias devhub --set-default-dev-hub
+          rm ./auth_url.txt
+
+      - name: Create scratch org
+        run: |
+          sf org create scratch \
+            --definition-file config/project-scratch-def.json \
+            --alias ci-scratch \
+            --set-default \
+            --duration-days 1 \
+            --wait 10
+
+      - name: Deploy source
+        run: sf project deploy start --target-org ci-scratch --wait 10
+
+      - name: Run Apex tests with coverage
+        run: |
+          sf apex run test \
+            --target-org ci-scratch \
+            --code-coverage \
+            --result-format human \
+            --wait 10 \
+            --test-level RunLocalTests
+
+      - name: Delete scratch org
+        if: always()
+        run: sf org delete scratch --target-org ci-scratch --no-prompt
